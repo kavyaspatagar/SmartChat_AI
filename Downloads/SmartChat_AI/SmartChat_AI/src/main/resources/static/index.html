@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <title>SmartChat AI</title>
+
+    <style>
+
+        body{
+            font-family: Arial;
+            background:#f4f4f4;
+            display:flex;
+            justify-content:center;
+            align-items:center;
+            height:100vh;
+            margin:0;
+        }
+
+        .chat-container{
+            width:400px;
+            height:600px;
+            background:white;
+            border-radius:10px;
+            overflow:hidden;
+            box-shadow:0 0 10px rgba(0,0,0,0.2);
+            display:flex;
+            flex-direction:column;
+        }
+
+        .chat-header{
+            background:#4a90e2;
+            color:white;
+            padding:20px;
+            font-size:24px;
+            font-weight:bold;
+        }
+
+        .chat-box{
+            flex:1;
+            padding:15px;
+            overflow-y:auto;
+            background:#fafafa;
+        }
+
+        .message{
+            padding:12px;
+            margin:10px 0;
+            border-radius:10px;
+            max-width:80%;
+            word-wrap:break-word;
+        }
+
+        .user{
+            background:#d1e7dd;
+            margin-left:auto;
+        }
+
+        .bot{
+            background:#eeeeee;
+            margin-right:auto;
+        }
+
+        .input-area{
+            display:flex;
+            border-top:1px solid #ccc;
+        }
+
+        input{
+            flex:1;
+            padding:15px;
+            border:none;
+            outline:none;
+            font-size:16px;
+        }
+
+        button{
+            width:100px;
+            border:none;
+            background:#4a90e2;
+            color:white;
+            font-size:18px;
+            cursor:pointer;
+        }
+
+        button:hover{
+            background:#357abd;
+        }
+
+        /* ✅ Typing dots */
+        .dot {
+            height: 8px;
+            width: 8px;
+            margin: 0 2px;
+            background-color: #888;
+            border-radius: 50%;
+            display: inline-block;
+            animation: blink 1.4s infinite both;
+        }
+
+        .dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes blink {
+            0% { opacity: 0.2; }
+            20% { opacity: 1; }
+            100% { opacity: 0.2; }
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<div class="chat-container">
+
+    <div class="chat-header">
+        SmartChat AI
+    </div>
+
+    <div class="chat-box" id="chatBox"></div>
+
+    <div class="input-area">
+
+        <input
+                type="text"
+                id="userInput"
+                placeholder="Ask something..."
+                onkeypress="handleEnter(event)"
+        >
+
+        <button onclick="sendMessage()">
+            Send
+        </button>
+
+    </div>
+
+</div>
+
+<script>
+
+    function addMessage(text, type){
+
+        let chatBox = document.getElementById("chatBox");
+
+        let div = document.createElement("div");
+
+        div.classList.add("message", type);
+
+        div.innerText = text;
+
+        chatBox.appendChild(div);
+
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function showTyping() {
+
+        let chatBox = document.getElementById("chatBox");
+
+        let typingDiv = document.createElement("div");
+
+        typingDiv.classList.add("message", "bot");
+
+        typingDiv.id = "typingIndicator";
+
+        typingDiv.innerHTML = `
+            <span class="dot"></span>
+            <span class="dot"></span>
+            <span class="dot"></span>
+        `;
+
+        chatBox.appendChild(typingDiv);
+
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function removeTyping() {
+
+        let typing = document.getElementById("typingIndicator");
+
+        if (typing) {
+            typing.remove();
+        }
+    }
+
+    async function sendMessage() {
+
+        let input = document.getElementById("userInput");
+
+        let message = input.value.trim();
+
+        if(message === ""){
+            return;
+        }
+
+        addMessage(message, "user");
+
+        input.value = "";
+
+        showTyping();
+
+        try {
+
+            const response = await fetch("http://localhost:8080/api/chat", {
+
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json"
+                },
+
+                body: JSON.stringify({
+                    message: message
+                })
+
+            });
+
+            const data = await response.json();
+
+            removeTyping();
+
+            addMessage(data.reply, "bot");
+
+        }
+        catch(error) {
+
+            console.error(error);
+
+            removeTyping();
+
+            addMessage("Server error occurred", "bot");
+        }
+    }
+
+    function handleEnter(event){
+
+        if(event.key === "Enter"){
+            sendMessage();
+        }
+    }
+
+</script>
+
+</body>
+
+</html>
